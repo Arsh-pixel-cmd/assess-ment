@@ -31,32 +31,40 @@ export default function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
     }));
   };
 
-  const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const handleEmailSignUp = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name,
-            marketing_consent: formData.agreeToMarketing,
-          },
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          name: formData.name,
+          marketing_consent: formData.agreeToMarketing,
         },
-      });
+      },
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      alert('Registration successful! Please check your email to verify your account.');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred during registration');
-    } finally {
-      setLoading(false);
+    // Check if email confirmation is required
+    if (data?.user && !data.session) {
+      // Redirect to success page
+      window.location.href = '/signup-success';
+    } else if (data.session) {
+      // User is automatically signed in
+      window.location.href = '/';
     }
-  };
+  } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred during registration');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +72,7 @@ export default function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
     setError('');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const {  error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -85,7 +93,7 @@ export default function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
     setError('');
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const {  error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -110,19 +118,21 @@ export default function AuthPage({ defaultMode = 'signin' }: AuthPageProps) {
         <div className="flex justify-center gap-8 mb-8">
           <button
             onClick={() => setIsSignIn(true)}
-            className={`text-lg font-medium pb-2 transition-colors ${isSignIn
-              ? 'text-gray-900 border-b-2 border-orange-500'
-              : 'text-gray-400'
-              }`}
+            className={`text-lg font-medium pb-2 transition-colors ${
+              isSignIn
+                ? 'text-gray-900 border-b-2 border-orange-500'
+                : 'text-gray-400'
+            }`}
           >
             SIGN IN
           </button>
           <button
             onClick={() => setIsSignIn(false)}
-            className={`text-lg font-medium pb-2 transition-colors ${!isSignIn
-              ? 'text-gray-900 border-b-2 border-orange-500'
-              : 'text-gray-400'
-              }`}
+            className={`text-lg font-medium pb-2 transition-colors ${
+              !isSignIn
+                ? 'text-gray-900 border-b-2 border-orange-500'
+                : 'text-gray-400'
+            }`}
           >
             I&apos;M NEW USER
           </button>
